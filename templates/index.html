@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{{ url_for('static', path='/css/main.css') }}">
+    <title>Document</title>
+</head>
+<body>
+    <div class="container">
+        <h1>Ricky Partes</h1>
+        <div class="text">Bienvenido a la IA de Ricky Partes, pregunta sobre algun equipo electronico y te dire como se compone.</div>
+        <form class="form" method="post">
+            <input placeholder="Ej. Hablame sobre las pcs" class="form-input"" type="string" name="frase"/>
+            <input class="submit-btn" type="submit">
+        </form>
+        <p>Resultado: {{ result }}</p>
+    <div>
+    
+</body>
+</html>

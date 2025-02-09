@@ -1,59 +1,36 @@
-from fastapi import FastAPI, Request, Form
-from fastapi.templating import Jinja2Templates
-from fastapi.staticfiles import StaticFiles
-import google.generativeai as genai
+import gzip
+import pickle
+from fastapi import FastAPI, status, HTTPException, UploadFile
+from fastapi.responses import JSONResponse
+from PIL import Image
+from keras.preprocessing.image import img_to_array
 
 
 app = FastAPI()
-app.mount("/static", StaticFiles(directory="static"), name="static")
 
-templates = Jinja2Templates(directory="templates")
-
-PARTS = {
-    "COMPUTADORAS": ["Mouse", "Teclado", "Monitor"],
-    "MICROONDAS": ["Buscalo en google"],
-    "TELEFONOS": ["Camara", "Pantalla Amoled", ""],
-}
+with gzip.open('model_pkl.gz', 'r') as f:
+    model = pickle.load(f)
 
 
-@app.get('/')
-def index(request: Request):
-    result = ""
-    return templates.TemplateResponse(
-        "index.html",
-        context={'request': request, 'result': result}
-    )
-
-
-@app.post("/")
-def form_post(request: Request, frase: str = Form(...)):
-
-    response = None
-
+@app.post("/api/ia-model")
+def ia_model(file:  UploadFile):
     try:
-        genai.configure(api_key="AIzaSyAHg3udnO0f4MKmZIE4YJbHBl4yZJr1SF0")
-        model = genai.GenerativeModel("gemini-1.5-flash")
+        img = Image.open(file.file)
+        img = img.resize(size=(200, 200))
+        img = img_to_array(img)
+        img = img.reshape(1, 200, 200, 3)
+        img = img.astype('float32')
+        img = img - [123.68, 116.779, 103.939]
+        result = model.predict(img)
+        num_result = result[0][0]
 
-        response = model.generate_content(f"""Te proporciono una lista de topicos: ["COMPUTADORAS", "MICROONDAS", "TELEFONOS"]]
-            Identifica del siguiente texto "{frase}" si se menciona, habla, se pregunta o se describe algo sobre uno de los topicos que se te
-            propocionaron. Debes ser muy preciso. En el caso de que la frase efectivamente hable sobre uno de los topicos, responde unicamente con la palabra del topico.
-            en caso contrario, responde con la palabra "UNKWON". Unicamente debes responder una palabra."
-        """)
-
-        response_model = str(response.text).strip()
-
-        if response_model == "UNKWON":
-            response = "No te entiendo man"
-        elif PARTS.get(response_model, None):
-            response = ", ".join(PARTS.get(response_model))
-        else:
-            response = "No se pudo solicitar la pregunta"
+        return JSONResponse(
+            content={
+                "status": "success",
+                "result": "dog" if num_result == 1 else "cat"
+            },
+            status_code=status.HTTP_200_OK
+        )
 
     except Exception as ex:
-        print(ex)
-        response = "Picaron"
-
-    return templates.TemplateResponse(
-        'index.html',
-        context={'request': request, 'result': response}
-    )
+        raise HTTPException(f"Cannot predict the image {str(ex)}") from ex

@@ -8,7 +8,7 @@ from keras.preprocessing.image import img_to_array
 
 app = FastAPI()
 
-with gzip.open('model_pkl.gz', 'r') as f:
+with gzip.open('./model_low_size_pkl.gz', 'r') as f:
     model = pickle.load(f)
 
 

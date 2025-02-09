@@ -4,9 +4,22 @@ from fastapi import FastAPI, status, HTTPException, UploadFile
 from fastapi.responses import JSONResponse
 from PIL import Image
 from keras.preprocessing.image import img_to_array
+from fastapi.middleware.cors import CORSMiddleware
 
 
 app = FastAPI()
+
+app = FastAPI()
+
+origins = ["*"]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 with gzip.open('./model_low_size_pkl.gz', 'r') as f:
     model = pickle.load(f)
